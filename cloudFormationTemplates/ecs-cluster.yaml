@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Template to deploy ECS cluster with ec2 Type workers
+
+Parameters:
+  Project:
+    Type: String
+    Default: EcsTestCluster
+    Description: Name of the project
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [ 'dev', 'int', 'prod', 'uat' ]
+  EcsClusterName:
+    Type: String
+    Default: suraj
+    Description: Ecs Cluster Name
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    Description: Ec2 Instance Type
+  KeyName:
+    Type: String
+    Default: ''
+    Description: Ec2 key name
+  ImageId:
+    Type: String
+    Default: ami-0c09d65d2051ada93
+    Description: Ec2 ImageId
+  VolumeSize:
+    Type: String
+    Default: 30
+    Description: Ec2 Ebs VolumeSize
+  VpcId:
+    Type: String
+    Default: ''
+    Description: VpcId of Ec2 instance
+  UserName:
+    Type: String
+    Default: suraj
+    Description: Name of the user
+  
+Resources:
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${Project}-${EcsClusterName}-${Environment}
+
+  EcsEc2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref EcsEc2Role
+      KeyName: !Ref KeyName
+      Tags:
+        -
+          Key: username
+          Value: !Ref UserName
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo 'ECS_CLUSTER=${EcsCluster}' >> /etc/ecs/ecs.config
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            VolumeType: "gp2"
+            DeleteOnTermination: true
+            VolumeSize: !Ref VolumeSize
+      SecurityGroupIds: [ !Ref EcsEc2SecurityGroup ]
+
+  EcsEc2Role:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [ ecsInstanceRole ]
+
+  EcsEc2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupDescription: 'ecs ec2 group'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: '0.0.0.0/0'
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: '0.0.0.0/0'
