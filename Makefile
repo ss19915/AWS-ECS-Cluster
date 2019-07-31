@@ -9,7 +9,9 @@ deploy:
 		--parameter-overrides \
 			VpcId=${VPC_ID} \
 			$$([ "${ENVIRONMENT}" == '' ] || echo "Environment=${ENVIRONMENT}" ) \
-			KeyName=${KEY_NAME}
+			KeyName=${KEY_NAME} \
+			EcsClusterName=${ECS_CLUSTER_NAME} \
+			UserName=${USER_NAME}
 
 delete:
 	@aws cloudformation delete-stack \

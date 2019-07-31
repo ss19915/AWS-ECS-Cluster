@@ -12,7 +12,7 @@ Parameters:
     AllowedValues: [ 'dev', 'int', 'prod', 'uat' ]
   EcsClusterName:
     Type: String
-    Default: suraj
+    Default: ''
     Description: Ecs Cluster Name
   InstanceType:
     Type: String
@@ -36,7 +36,7 @@ Parameters:
     Description: VpcId of Ec2 instance
   UserName:
     Type: String
-    Default: suraj
+    Default: ''
     Description: Name of the user
   
 Resources:
