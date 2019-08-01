@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Template to create ecs task
+
+Parameters:
+  TaskName:
+    Type: String
+    Default: nginx_server
+    Description: Name/Family of the task
+  ContainerName:
+    Type: String
+    Default: nginx
+    Description: Name of docker container
+  ContainerImage:
+    Type: String
+    Default: nginx:latest
+    Description: Image name of docker container
+  ContainerCpu:
+    Type: Number
+    Default: 256
+  ContainerMemoryReservation:
+    Type: Number
+    Default: 300
+
+Resources:
+  EcsTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: nginx_server
+      ContainerDefinitions:
+        -
+          Name: !Ref ContainerName
+          Image: !Ref ContainerImage
+          Cpu: !Ref ContainerCpu
+          MemoryReservation: !Ref ContainerMemoryReservation
+          PortMappings:
+            -
+              Protocol: 'tcp'
+              ContainerPort: 80
+              HostPort: 80
