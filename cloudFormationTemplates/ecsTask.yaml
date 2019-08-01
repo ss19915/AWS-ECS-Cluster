@@ -20,6 +20,16 @@ Parameters:
   ContainerMemoryReservation:
     Type: Number
     Default: 300
+  EcsClusterName:
+    Type: String
+    Default: ''
+  LaunchType:
+    Type: String
+    Default: EC2
+    AllowedValues: [ EC2, FARGATE ]
+  DesiredCount:
+    Type: Number
+    Default: 1
 
 Resources:
   EcsTask:
@@ -37,3 +47,11 @@ Resources:
               Protocol: 'tcp'
               ContainerPort: 80
               HostPort: 80
+  
+  EcsTaskService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref EcsClusterName
+      DesiredCount: !Ref DesiredCount
+      LaunchType: !Ref LaunchType
+      TaskDefinition: !Ref EcsTask

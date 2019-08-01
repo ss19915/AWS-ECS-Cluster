@@ -2,14 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Template to deploy ECS cluster with ec2 Type workers
 
 Parameters:
-  Project:
-    Type: String
-    Default: EcsTestCluster
-    Description: Name of the project
-  Environment:
-    Type: String
-    Default: dev
-    AllowedValues: [ 'dev', 'int', 'prod', 'uat' ]
   EcsClusterName:
     Type: String
     Default: ''
@@ -43,7 +35,7 @@ Resources:
   EcsCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: !Sub ${Project}-${EcsClusterName}-${Environment}
+      ClusterName: !Ref EcsClusterName
 
   EcsEc2Instance:
     Type: AWS::EC2::Instance
