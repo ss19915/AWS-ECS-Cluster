@@ -4,14 +4,15 @@ ENVIRONMENT := $(if $(ENVIRONMENT),$(ENVIRONMENT),dev)
 ECS_STACK_NAME = ${PROJECT}-${STACK_NAME}-Cluster-${ENVIRONMENT}
 TASK_STACK_NAME = ${PROJECT}-${STACK_NAME}-Task-${ENVIRONMENT}
 ECS_CLUSTER_NAME = ${PROJECT}-${CLUSTER_NAME}-${ENVIRONMENT}
+TARGET_GROUP_NAME= ${PROJECT}-Target-Group-${ENVIRONMENT}
 
 deploy:
 	@${MAKE} createEcs
 	@${MAKE} createTask
 
 deleteAll:
-	@${MAKE} deleteEcs
 	@${MAKE} deleteTask
+	@${MAKE} deleteEcs
 
 createEcs:
 	@echo Creating/Updating ECS Cluster . . . . . . . 
@@ -25,7 +26,8 @@ createEcs:
 			VpcId=${VPC_ID} \
 			KeyName=${KEY_NAME} \
 			EcsClusterName=${ECS_CLUSTER_NAME} \
-			UserName=${USER_NAME}
+			UserName=${USER_NAME} \
+			TargetGroupName=${TARGET_GROUP_NAME}
 
 deleteEcs:
 	@echo Deleting ECS Cluster . . . . . 

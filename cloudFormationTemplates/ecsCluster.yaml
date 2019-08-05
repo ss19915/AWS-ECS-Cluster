@@ -18,6 +18,9 @@ Parameters:
     Type: String
     Default: ami-0c09d65d2051ada93
     Description: Ec2 ImageId
+  TargetGroupName:
+    Type: String
+    Default: ''
   VolumeSize:
     Type: String
     Default: 30
@@ -36,7 +39,11 @@ Resources:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: !Ref EcsClusterName
-
+      Tags:
+        -
+          Key: username
+          Value: !Ref UserName
+      
   EcsEc2Instance:
     Type: AWS::EC2::Instance
     Properties:
@@ -79,3 +86,19 @@ Resources:
           FromPort: '80'
           ToPort: '80'
           CidrIp: '0.0.0.0/0'
+      Tags:
+        -
+          Key: username
+          Value: !Ref UserName
+
+  EcsTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Ref TargetGroupName
+      Port: 80
+      Protocol: HTTP
+      Tags: 
+        -
+          Key: username
+          Value: !Ref UserName
+      VpcId: !Ref VpcId
