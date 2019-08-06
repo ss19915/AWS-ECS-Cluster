@@ -21,6 +21,9 @@ Parameters:
   LoadBalancerName:
     Type: String
     Default: ''
+  TargetGroupArnName:
+    Type: String
+    Default: ''
   TargetGroupName:
     Type: String
     Default: ''
@@ -44,6 +47,16 @@ Parameters:
     Description: Name of the user
   
 Resources:
+  AlbListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties: 
+      DefaultActions: 
+        - TargetGroupArn: !Ref AlbTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref EcsLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
   AlbSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -142,3 +155,8 @@ Outputs:
   LoadBalancerDns:
     Description: The Dns Address of LoadBalancer
     Value: !GetAtt EcsLoadBalancer.DNSName
+  TargetGroupArn:
+    Value: !Ref AlbTargetGroup
+    Description: Arn of load balancer target group
+    Export:
+      Name: !Ref TargetGroupArnName

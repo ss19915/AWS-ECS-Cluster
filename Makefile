@@ -5,7 +5,10 @@ ECS_STACK_NAME = ${PROJECT}-${STACK_NAME}-Cluster-${ENVIRONMENT}
 TASK_STACK_NAME = ${PROJECT}-${STACK_NAME}-Task-${ENVIRONMENT}
 ECS_CLUSTER_NAME = ${PROJECT}-${CLUSTER_NAME}-${ENVIRONMENT}
 TARGET_GROUP_NAME = ${PROJECT}-Target-Group-${ENVIRONMENT}
-LOAD_BALANCER_NAME=  ${PROJECT}-LoadBalancer-${ENVIRONMENT}
+LOAD_BALANCER_NAME = ${PROJECT}-LoadBalancer-${ENVIRONMENT}
+SERVICE_NAME = ${PROJECT}-service-${ENVIRONMENT}
+TARGET_GROUP_ARN_NAME = ${PROJECT}-targetGroupArn-${ENVIRONMENT}
+
 deploy:
 	@${MAKE} createEcs
 	@${MAKE} createTask
@@ -16,7 +19,7 @@ deleteAll:
 
 createEcs:
 	@echo Creating/Updating ECS Cluster . . . . . . . 
-	aws cloudformation deploy \
+	@aws cloudformation deploy \
 		--region ${REGION} \
 		--template-file cloudFormationTemplates/ecsCluster.yaml \
 		--no-fail-on-empty-changeset \
@@ -30,7 +33,8 @@ createEcs:
 			TargetGroupName=${TARGET_GROUP_NAME} \
 			LoadBalancerName=${LOAD_BALANCER_NAME} \
 			VpcCird=${VPC_CIDR} \
-			VpcSubnets=${VPC_SUBNETS}
+			VpcSubnets=${VPC_SUBNETS} \
+			TargetGroupArnName=${TARGET_GROUP_ARN_NAME}
 
 deleteEcs:
 	@echo Deleting ECS Cluster . . . . . 
@@ -47,7 +51,10 @@ createTask:
 		--stack-name ${TASK_STACK_NAME} \
 		--parameter-overrides \
 			EcsClusterName=${ECS_CLUSTER_NAME} \
-			$$([[ '${TASK_DESIRED_COUNT}' == '' ]] || echo 'DesiredCount=${TASK_DESIRED_COUNT}')
+			$$([[ '${TASK_DESIRED_COUNT}' == '' ]] || echo 'DesiredCount=${TASK_DESIRED_COUNT}') \
+			ServiceName=${SERVICE_NAME} \
+			LoadBalancerName=${LOAD_BALANCER_NAME} \
+			TargetGroupArnName=${TARGET_GROUP_ARN_NAME}
 
 deleteTask:
 	@echo Deleting ECS TaskDefinition . . . . . 

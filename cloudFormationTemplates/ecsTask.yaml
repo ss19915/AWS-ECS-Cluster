@@ -16,6 +16,10 @@ Parameters:
     Type: String
     Default: nginx
     Description: Name of docker container
+  ContainerPort:
+    Type: Number
+    Default: 80
+    Description: Port of docker container to expose
   DesiredCount:
     Type: Number
     Default: 1
@@ -26,10 +30,20 @@ Parameters:
     Type: String
     Default: EC2
     AllowedValues: [ EC2, FARGATE ]
+  LoadBalancerName:
+    Type: String
+    Default: ''
   SchedulingStrategy:
     Type: String
     Default: REPLICA
     AllowedValues: [ REPLICA, DAEMON ]
+  ServiceName:
+    Type: String
+    Default: ''
+    Description: Name of the ecs service
+  TargetGroupArnName:
+    Type: String
+    Default: ''
   TaskName:
     Type: String
     Default: nginx_server
@@ -39,7 +53,7 @@ Resources:
   EcsTask:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: nginx_server
+      Family: !Ref TaskName
       ContainerDefinitions:
         -
           Name: !Ref ContainerName
@@ -49,20 +63,26 @@ Resources:
           PortMappings:
             -
               Protocol: 'tcp'
-              ContainerPort: 80
+              ContainerPort: !Ref ContainerPort
               HostPort: 0
   
   EcsTaskService:
     Type: AWS::ECS::Service
     Properties:
       Cluster: !Ref EcsClusterName
-      DesiredCount: !Ref DesiredCount
-      LaunchType: !Ref LaunchType
-      PlacementStrategies:
-        - Type: spread
-          Field: host
-      TaskDefinition: !Ref EcsTask
-      SchedulingStrategy: !Ref SchedulingStrategy
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 50
+      DesiredCount: !Ref DesiredCount
+      LaunchType: !Ref LaunchType
+      LoadBalancers:
+        - ContainerName: !Ref ContainerName
+          ContainerPort:  !Ref ContainerPort
+          TargetGroupArn:
+            Fn::ImportValue: !Ref TargetGroupArnName
+      PlacementStrategies:
+        - Type: spread
+          Field: host
+      SchedulingStrategy: !Ref SchedulingStrategy
+      ServiceName: !Ref ServiceName
+      TaskDefinition: !Ref EcsTask
