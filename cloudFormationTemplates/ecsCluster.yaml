@@ -18,6 +18,9 @@ Parameters:
     Type: String
     Default: ami-0c09d65d2051ada93
     Description: Ec2 ImageId
+  LoadBalancerName:
+    Type: String
+    Default: ''
   TargetGroupName:
     Type: String
     Default: ''
@@ -29,12 +32,45 @@ Parameters:
     Type: String
     Default: ''
     Description: VpcId of Ec2 instance
+  VpcCird:
+    Type: String
+    Default: ''
+  VpcSubnets:
+    Type: List<String>
+    Default: ''
   UserName:
     Type: String
     Default: ''
     Description: Name of the user
   
 Resources:
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupDescription: 'ALB security group'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: '0.0.0.0/0'
+      Tags:
+        -
+          Key: username
+          Value: !Ref UserName
+
+  AlbTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Ref TargetGroupName
+      Port: 80
+      Protocol: HTTP
+      Tags: 
+        -
+          Key: username
+          Value: !Ref UserName
+      VpcId: !Ref VpcId
+
   EcsCluster:
     Type: AWS::ECS::Cluster
     Properties:
@@ -49,7 +85,7 @@ Resources:
     Properties:
       ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
-      IamInstanceProfile: !Ref EcsEc2Role
+      IamInstanceProfile: !Ref Ec2Role
       KeyName: !Ref KeyName
       Tags:
         -
@@ -65,14 +101,14 @@ Resources:
             VolumeType: "gp2"
             DeleteOnTermination: true
             VolumeSize: !Ref VolumeSize
-      SecurityGroupIds: [ !Ref EcsEc2SecurityGroup ]
+      SecurityGroupIds: [ !Ref Ec2SecurityGroup ]
 
-  EcsEc2Role:
+  Ec2Role:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Roles: [ ecsInstanceRole ]
 
-  EcsEc2SecurityGroup:
+  Ec2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       VpcId: !Ref VpcId
@@ -83,22 +119,26 @@ Resources:
           ToPort: '22'
           CidrIp: '0.0.0.0/0'
         - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '80'
-          CidrIp: '0.0.0.0/0'
+          FromPort: '1'
+          ToPort: '65535'
+          CidrIp: !Ref VpcCird
+      Tags:
+        -
+          Key: username
+          Value: !Ref UserName
+        
+  EcsLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Ref LoadBalancerName
+      SecurityGroups: [ !Ref AlbSecurityGroup ]
+      Subnets: !Ref VpcSubnets
       Tags:
         -
           Key: username
           Value: !Ref UserName
 
-  EcsTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      Name: !Ref TargetGroupName
-      Port: 80
-      Protocol: HTTP
-      Tags: 
-        -
-          Key: username
-          Value: !Ref UserName
-      VpcId: !Ref VpcId
+Outputs:
+  LoadBalancerDns:
+    Description: The Dns Address of LoadBalancer
+    Value: !GetAtt EcsLoadBalancer.DNSName

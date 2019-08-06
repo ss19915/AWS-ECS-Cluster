@@ -4,8 +4,8 @@ ENVIRONMENT := $(if $(ENVIRONMENT),$(ENVIRONMENT),dev)
 ECS_STACK_NAME = ${PROJECT}-${STACK_NAME}-Cluster-${ENVIRONMENT}
 TASK_STACK_NAME = ${PROJECT}-${STACK_NAME}-Task-${ENVIRONMENT}
 ECS_CLUSTER_NAME = ${PROJECT}-${CLUSTER_NAME}-${ENVIRONMENT}
-TARGET_GROUP_NAME= ${PROJECT}-Target-Group-${ENVIRONMENT}
-
+TARGET_GROUP_NAME = ${PROJECT}-Target-Group-${ENVIRONMENT}
+LOAD_BALANCER_NAME=  ${PROJECT}-LoadBalancer-${ENVIRONMENT}
 deploy:
 	@${MAKE} createEcs
 	@${MAKE} createTask
@@ -16,7 +16,7 @@ deleteAll:
 
 createEcs:
 	@echo Creating/Updating ECS Cluster . . . . . . . 
-	@aws cloudformation deploy \
+	aws cloudformation deploy \
 		--region ${REGION} \
 		--template-file cloudFormationTemplates/ecsCluster.yaml \
 		--no-fail-on-empty-changeset \
@@ -27,7 +27,10 @@ createEcs:
 			KeyName=${KEY_NAME} \
 			EcsClusterName=${ECS_CLUSTER_NAME} \
 			UserName=${USER_NAME} \
-			TargetGroupName=${TARGET_GROUP_NAME}
+			TargetGroupName=${TARGET_GROUP_NAME} \
+			LoadBalancerName=${LOAD_BALANCER_NAME} \
+			VpcCird=${VPC_CIDR} \
+			VpcSubnets=${VPC_SUBNETS}
 
 deleteEcs:
 	@echo Deleting ECS Cluster . . . . . 
