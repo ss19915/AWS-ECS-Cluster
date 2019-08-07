@@ -2,10 +2,26 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Template to deploy ECS cluster with ec2 Type workers
 
 Parameters:
+  AutoScalingDesiredCapacity:
+    Type: Number
+    Default: 2
+  AutoScalingGroupName:
+    Type: String
+    Default: ''
+  AutoScalingMaxSize:
+    Type: Number
+    Default: 100
+  AutoScalingMinSize:
+    Type: Number
+    Default: 1
   EcsClusterName:
     Type: String
     Default: ''
     Description: Ecs Cluster Name
+  ImageId:
+    Type: String
+    Default: ami-0c09d65d2051ada93
+    Description: Ec2 ImageId
   InstanceType:
     Type: String
     Default: t2.micro
@@ -14,10 +30,9 @@ Parameters:
     Type: String
     Default: ''
     Description: Ec2 key name
-  ImageId:
+  LaunchConfigurationName:
     Type: String
-    Default: ami-0c09d65d2051ada93
-    Description: Ec2 ImageId
+    Default: ''
   LoadBalancerName:
     Type: String
     Default: ''
@@ -84,6 +99,51 @@ Resources:
           Value: !Ref UserName
       VpcId: !Ref VpcId
 
+  AutoScalingLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            VolumeType: "gp2"
+            DeleteOnTermination: true
+            VolumeSize: !Ref VolumeSize
+      IamInstanceProfile: !Ref Ec2Profile
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      LaunchConfigurationName: !Ref LaunchConfigurationName
+      SecurityGroups: [ !Ref Ec2SecurityGroup ]
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo 'ECS_CLUSTER=${EcsCluster}' >> /etc/ecs/ecs.config
+      
+  Ec2AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroupName
+      DesiredCapacity: !Ref AutoScalingDesiredCapacity
+      LaunchConfigurationName: !Ref AutoScalingLaunchConfig
+      MaxSize: !Ref AutoScalingMaxSize
+      MinSize: !Ref AutoScalingMinSize
+      Tags:
+        - Key: username
+          PropagateAtLaunch: True
+          Value: !Ref UserName
+      TargetGroupARNs: [ !Ref AlbTargetGroup ]
+      VPCZoneIdentifier: !Ref VpcSubnets
+
+  Ec2AutoScalingUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref Ec2AutoScalingGroup
+      PolicyType: StepScaling
+      StepAdjustments:
+        - MetricIntervalLowerBound: 0
+          ScalingAdjustment: 2
+
   EcsCluster:
     Type: AWS::ECS::Cluster
     Properties:
@@ -98,7 +158,7 @@ Resources:
     Properties:
       ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
-      IamInstanceProfile: !Ref Ec2Role
+      IamInstanceProfile: !Ref Ec2Profile
       KeyName: !Ref KeyName
       Tags:
         -
@@ -116,7 +176,7 @@ Resources:
             VolumeSize: !Ref VolumeSize
       SecurityGroupIds: [ !Ref Ec2SecurityGroup ]
 
-  Ec2Role:
+  Ec2Profile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Roles: [ ecsInstanceRole ]

@@ -8,6 +8,8 @@ TARGET_GROUP_NAME = ${PROJECT}-Target-Group-${ENVIRONMENT}
 LOAD_BALANCER_NAME = ${PROJECT}-LoadBalancer-${ENVIRONMENT}
 SERVICE_NAME = ${PROJECT}-service-${ENVIRONMENT}
 TARGET_GROUP_ARN_NAME = ${PROJECT}-targetGroupArn-${ENVIRONMENT}
+AUTO_SCALING_LAUNCH_CONFIGURATION_NAME = ${PROJECT}-LaunchConfiguration-${ENVIRONMENT}
+AUTO_SCALING_GROUP_NAME = ${PROJECT}-GroupName-${ENVIRONMENT}
 
 deploy:
 	@${MAKE} createEcs
@@ -34,12 +36,18 @@ createEcs:
 			LoadBalancerName=${LOAD_BALANCER_NAME} \
 			VpcCird=${VPC_CIDR} \
 			VpcSubnets=${VPC_SUBNETS} \
-			TargetGroupArnName=${TARGET_GROUP_ARN_NAME}
+			TargetGroupArnName=${TARGET_GROUP_ARN_NAME} \
+			LaunchConfigurationName=${AUTO_SCALING_LAUNCH_CONFIGURATION_NAME} \
+			AutoScalingGroupName=${AUTO_SCALING_GROUP_NAME}
+
+	@${MAKE} ecsOutput
 
 deleteEcs:
 	@echo Deleting ECS Cluster . . . . . 
 	@aws cloudformation delete-stack \
 		--stack-name ${ECS_STACK_NAME}
+	@aws cloudformation wait stack-delete-complete \
+		--stack-name ${ECS_STACK_NAME}	
 
 createTask:
 	@echo Creating/Updating ECS TaskDefinition . . . . . . . 
@@ -60,3 +68,8 @@ deleteTask:
 	@echo Deleting ECS TaskDefinition . . . . . 
 	@aws cloudformation delete-stack \
 		--stack-name ${TASK_STACK_NAME}
+	@aws cloudformation wait stack-delete-complete \
+		--stack-name ${TASK_STACK_NAME}	
+
+ecsOutput:
+	@aws cloudformation describe-stacks --stack-name ${ECS_STACK_NAME} --query "Stacks[0].Outputs" 
