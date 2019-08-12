@@ -62,6 +62,40 @@ Parameters:
     Description: Name of the user
   
 Resources:
+  AlbScaleUpAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: True
+      AlarmActions:
+        - !Ref Ec2AutoScalingUpPolicy
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref AutoScalingGroupName
+      EvaluationPeriods: 1
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Period: 60
+      Statistic: Average
+      Threshold: 80
+
+  AlbScaleDownAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: True
+      AlarmActions:
+        - !Ref Ec2AutoScalingDownPolicy
+      ComparisonOperator: LessThanOrEqualToThreshold
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref AutoScalingGroupName
+      EvaluationPeriods: 1
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Period: 60
+      Statistic: Average
+      Threshold: 50
+
   AlbListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties: 
@@ -127,6 +161,8 @@ Resources:
       LaunchConfigurationName: !Ref AutoScalingLaunchConfig
       MaxSize: !Ref AutoScalingMaxSize
       MinSize: !Ref AutoScalingMinSize
+      MetricsCollection:
+        - Granularity: 1Minute
       Tags:
         - Key: username
           PropagateAtLaunch: True
@@ -143,6 +179,16 @@ Resources:
       StepAdjustments:
         - MetricIntervalLowerBound: 0
           ScalingAdjustment: 2
+
+  Ec2AutoScalingDownPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref Ec2AutoScalingGroup
+      PolicyType: StepScaling
+      StepAdjustments:
+        - MetricIntervalLowerBound: 0
+          ScalingAdjustment: -2
 
   EcsCluster:
     Type: AWS::ECS::Cluster
