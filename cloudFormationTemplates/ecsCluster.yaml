@@ -175,20 +175,14 @@ Resources:
     Properties:
       AdjustmentType: ChangeInCapacity
       AutoScalingGroupName: !Ref Ec2AutoScalingGroup
-      PolicyType: StepScaling
-      StepAdjustments:
-        - MetricIntervalLowerBound: 0
-          ScalingAdjustment: 2
+      ScalingAdjustment: 2
 
   Ec2AutoScalingDownPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
       AdjustmentType: ChangeInCapacity
       AutoScalingGroupName: !Ref Ec2AutoScalingGroup
-      PolicyType: StepScaling
-      StepAdjustments:
-        - MetricIntervalLowerBound: 0
-          ScalingAdjustment: -2
+      ScalingAdjustment: -2
 
   EcsCluster:
     Type: AWS::ECS::Cluster
